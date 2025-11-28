@@ -3,7 +3,7 @@
 #include <Adafruit_SSD1306.h>
 // #include <TimeLib.h>
 
-#define OLED_ADDR   0x3C
+#define OLED_ADDR 0x3C
 Adafruit_SSD1306 display(128, 32, &Wire, -1);
 
 void setup() {
