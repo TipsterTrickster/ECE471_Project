@@ -35,7 +35,7 @@ void setup() {
   display.setTextColor(INVERSE);
   display.setTextSize(2.5);
   display.setCursor(15,15);
-  display.println("67:42.181");
+  display.println("0:00.000");
   display.display();
 
 
@@ -48,28 +48,29 @@ void loop() {
     while ((cap.filteredData(0) < 6) && (cap.filteredData(1) < 6));
 
     started = 1;
+    counter = 0;
   }
 
   if (started) {
-
     if ((cap.filteredData(0) < 6) && (cap.filteredData(1) < 6)) {
 
       while ((cap.filteredData(0) < 6) && (cap.filteredData(1) < 6));
 
       started = 0;
-      counter = 0;
     }
 
     display.clearDisplay();
     display.setTextColor(INVERSE);
     display.setTextSize(2.5);
     display.setCursor(15,15);
-    display.println(counter);
+    display.print(counter / 100);
+    display.print(".");
+    display.print(counter % 100);
     display.display();
 
     counter++;
     
     // put a delay so it isn't overwhelming
-    delay(1000);
+    delay(10);
   }
 }
