@@ -2,7 +2,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "Adafruit_MPR121.h"
-// #include <TimeLib.h>
 
 #define OLED_ADDR   0x3C
 #define DEBOUNCE_DELAY 50
@@ -11,10 +10,11 @@
 Adafruit_SSD1306 display(128, 32, &Wire, -1);
 Adafruit_MPR121 cap = Adafruit_MPR121();
 
+bool lastTouchState = false;
+bool touchActive = false; // track previous touch for toggle
 int started = 0;
-int stopped = 0;
-int touched = 0;
-unsigned long static startTime = 0;
+unsigned long lastTouchTime = 0; // Last time touch changed
+unsigned long startTime = 0;
 
 void setup() {
   
@@ -46,36 +46,27 @@ void setup() {
 
 void loop() {
 
-  // unsigned long timeNow = millis();
+  bool bothTouched = (cap.filteredData(0) < TOUCH_SENSOR_THRESHOLD) && (cap.filteredData(1) < TOUCH_SENSOR_THRESHOLD);
 
-  // // Debouncing
-  // if((millis() - timeNow) > DEBOUNCE_DELAY){
-  //   touched = 1;
-  // }
-  
-  // if ((cap.filteredData(0) < TOUCH_SENSOR_THRESHOLD) && (cap.filteredData(1) < TOUCH_SENSOR_THRESHOLD)) {
-  //   unsigned long touch_time = millis();
-  //   if((millis() - touch_time) > DEBOUNCE_DELAY) touched = 1;
-  // }
-  
-  // Start timer only if both sensors are touched simultaneously for a period longer than debounce delay
-  if ((cap.filteredData(0) < TOUCH_SENSOR_THRESHOLD) && (cap.filteredData(1) < TOUCH_SENSOR_THRESHOLD) && !started) {
-    unsigned long static touch_time = millis();
-    if((millis() - touch_time) > DEBOUNCE_DELAY){
-      while ((cap.filteredData(0) < TOUCH_SENSOR_THRESHOLD) && (cap.filteredData(1) < TOUCH_SENSOR_THRESHOLD));
-      started = 1;
-      touched = 0;
-      startTime = millis();
-    }
-
+  if (bothTouched != lastTouchState) {
+      // Touch state changed
+      lastTouchTime = millis();  // Reset debounce timer
+      lastTouchState = bothTouched;
   }
 
-  if (started) {
-    if ((cap.filteredData(0) < TOUCH_SENSOR_THRESHOLD) && (cap.filteredData(1) < TOUCH_SENSOR_THRESHOLD)) {
+  if (bothTouched && (millis() - lastTouchTime > DEBOUNCE_DELAY) && !touchActive) {
+      started = !started;  // toggle start/stop
+      if (started) startTime = millis(); // reset startTime only when starting
+      touchActive = true; // mark that toggle has happened
+  }
 
-      while ((cap.filteredData(0) < TOUCH_SENSOR_THRESHOLD) && (cap.filteredData(1) < TOUCH_SENSOR_THRESHOLD));
-      started = 0;
-    }
+  // Reset touchActive when fingers are lifted
+  if (!bothTouched) {
+    touchActive = false;
+  }
+
+
+  if (started) {
     
     // Find elapsed time from start of stopwatch
     unsigned long elapsed = millis() - startTime;
@@ -98,12 +89,12 @@ void loop() {
     display.print(seconds);
     display.print(".");
     if(milliseconds<10) display.print("00"); // Padding zeros
-    if(milliseconds<100) display.print("0"); // Padding zeros
+    else if(milliseconds<100) display.print("0"); // Padding zeros
     display.print(milliseconds);
 
     display.display();
 
     // put a delay so it isn't overwhelming
-    delay(10);
+    // delay(10);
   }
 }
